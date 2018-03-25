@@ -1,0 +1,5 @@
+node_modules
+*.log
+*.gif
+config.json
+*.pdf
