@@ -16,6 +16,16 @@
 
 ## OPACHelper API
 
+## Wiki
+
+### Ubuntu install tesseract
+
+```zsh
+sudo add-apt-repository ppa:alex-p/tesseract-ocr
+sudo apt-get update
+sudo apt-get install tesseract-ocr
+```
+
 ## Todo List
 
 - [ ] 实现已借阅书籍的一键续借
