@@ -99,6 +99,27 @@ async function getLiteBooks() {
 }
 
 /**
+ * 将获取到的借阅信息转JSON
+ * @param {String} text
+ * @return {JSON}
+ */
+function handleBooks2Json(text) {
+  let json = []
+  const pattern = /(.*)\u{20}{8}\r\n/ug
+  //console.log(new Date().toLocaleDateString('zh'))
+  text.match(pattern).forEach(val=>{
+    let [name, time] = val.trim().split(/\u{20}/u)
+    let mils = new Date(time).getTime() - new Date().getTime()
+    let days = `${Math.floor(mils / (24*3600*1000))}d`
+    //console.log(days)
+    json.push({ name, time, days})
+  })
+  console.log(JSON.stringify(json, null, 2))
+  return JSON.stringify(json, null, 2)
+
+}
+
+/**
  * 第一次登录或者Cookie过期时执行
  * @return {void}
  */
@@ -115,6 +136,7 @@ async function doFirstLogin() {
     return 
   }
   let res = await getLiteBooks().catch(err=>console.error(err))
-  console.log(res)
+  handleBooks2Json(res)
+  //console.log(res)
 })()
 
