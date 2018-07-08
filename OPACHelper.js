@@ -87,7 +87,7 @@ async function getLiteBooks() {
       const needLogin = body.match(/<input.*value="登录">/)
       if(!needLogin) {
         const base64 = body.match(/<img src=".*qrcode=(.*?)" border="0" \/>/)[1]
-        const res = new Buffer(qs.unescape(base64), 'base64').toString()
+        const res = Buffer.from(qs.unescape(base64), 'base64').toString()
         return res
       } else {
         console.log('[!] Cookie过期啦, 正在尝试续Cookie...')
