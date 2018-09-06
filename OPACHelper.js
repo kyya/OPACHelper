@@ -1,5 +1,7 @@
 const fetch = require('node-fetch')
 const fs = require('fs')
+const { tmpdir } = require('os')
+//const { recognize } = require('tesseract.js')
 const recognize = require('tesseractocr')
 const qs = require('querystring')
 
@@ -7,6 +9,7 @@ class OPACHelper {
     constructor(options = {}) {
         this.options = options;
         this.needRelogin = false;
+        this.captchaFile = `${tmpdir()}/captcha.gif`
     }
     // return verified cookie
     async login() {
@@ -27,12 +30,12 @@ class OPACHelper {
         // download captcha gif
         await fetch(`http://${config.url}/reader/captcha.php`, { headers:headers1 })
             .then(res => {
-                const dest = fs.createWriteStream('/tmp/captcha.gif')
+                const dest = fs.createWriteStream(this.captchaFile)
                 res.body.pipe(dest)
                 return dest
             })
 
-        let code = await recognize('/tmp/captcha.gif', {})
+        let code = await recognize(this.captchaFile, {})
         code = code.trim()
         console.log(`[2/3] 验证码识别成功 ${code}`)
         
@@ -51,7 +54,7 @@ class OPACHelper {
         .then(res=>res.ok)
     
         if (ok) {
-            console.log(`[3/3] Cookie [${cookie}] 自动认证通过!`)
+            console.log(`[3/3] Cookie 认证通过!`)
             return Promise.resolve(cookie)
         } else {
             throw new Error('verify-fail')
@@ -69,7 +72,7 @@ class OPACHelper {
         fs.writeFile('./config.json', JSON.stringify(config, null, 2), err=>{
             if (err) throw err
             this.needRelogin = false;
-            console.log(`[*] Cookie [${cookie}] 已保存至配置文件.`)
+            //console.log(`[*] Cookie [${cookie}] 已保存至配置文件.`)
             return Promise.resolve()
         })
     }
@@ -92,10 +95,20 @@ class OPACHelper {
         // test whether need relogin
         const needLogin = body.match(/<input.*value="登录">/)
         if(!needLogin) {
-            const base64 = body.match(/<img src=".*qrcode=(.*?)" border="0" \/>/)[1]
-            const res = Buffer.from(qs.unescape(base64), 'base64').toString()
-            // console.log(res)
-            return this.handleBooks2Json(res)
+            const ifBorrow = body.match(/<img src=".*qrcode=(.*?)" border="0" \/>/)
+            if(ifBorrow) {
+                const base64 = ifBorrow[1]
+                const res = Buffer.from(qs.unescape(base64), 'base64').toString()
+                // console.log(res)
+                return this.handleBooks2Json(res)
+            }
+            else {
+                return {
+                    success: 0,
+                    msg: '您的该项记录为空！'
+                }
+            }
+          
         } else {
             console.log('[!] Cookie过期啦, 正在尝试续Cookie...')
             this.needRelogin = true;
